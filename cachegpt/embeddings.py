@@ -41,7 +41,7 @@ class Embeddings:
 
     def __init__(
         self,
-        api_key: None | str = None,
+        api_key: Union[None, str] = None,
         auth: Literal["dotenv", "prompt", "arg"] = "dotenv",
         env_var: str = "OPENAI_KEY",
         cache_dir: str = "embedding_cache",

@@ -1,10 +1,10 @@
 import os
-from typing import Literal
+from typing import Literal, Union
 import openai
 
 
 def openai_client(
-    api_key: None | str = None,
+    api_key: Union[None, str] = None,
     auth: Literal["dotenv", "prompt", "arg"] = "dotenv",
     env_var: str = "OPENAI_KEY",
 ) -> openai.OpenAI:

@@ -1,5 +1,5 @@
 import json
-from typing import Callable, Literal
+from typing import Callable, Literal, Union
 import openai
 import diskcache
 import pandas as pd
@@ -44,7 +44,7 @@ class GPT:
 
     def __init__(
         self,
-        api_key: None | str = None,
+        api_key: Union[None, str] = None,
         auth: Literal["dotenv", "prompt", "arg"] = "dotenv",
         env_var: str = "OPENAI_KEY",
         cache_dir: str = "gpt_cache",
