@@ -1,5 +1,5 @@
 import json
-from typing import Callable, Union, Literal
+from typing import Callable, Union, Literal, Iterable
 import openai
 import diskcache
 import numpy as np
@@ -29,7 +29,7 @@ class Embeddings:
         __call__(self, inputs: list[str], format: str = 'df') -> Union[pd.DataFrame, list, np.ndarray]:
             Generate embeddings for a list of text inputs and return them in the specified format.
 
-    Example:
+    Example:`
         # Create an instance of the Embeddings class
         embeddings = Embeddings(cache_dir='custom_cache', cache_timeout=3600, format='df')
 
@@ -44,31 +44,43 @@ class Embeddings:
         api_key: Union[None, str] = None,
         auth: Literal["dotenv", "prompt", "arg"] = "dotenv",
         env_var: str = "OPENAI_KEY",
-        cache_dir: str = "embedding_cache",
+        cache_dir: Union[str, None] = "embedding_cache",
         cache_timeout: float = float("inf"),
         format="df",
+        **embedding_args,
     ):
-        self.cache = diskcache.Cache(cache_dir, timeout=cache_timeout)
+        if cache_dir is None:
+            self.cache = None
+        else:
+            self.cache = diskcache.Cache(cache_dir, timeout=cache_timeout)
         self.client = openai_client(api_key, auth, env_var)
+        default_args = {"model": "text-embedding-3-large", "dimensions": 1024}
+        # Use defaults unless provided
+        self.default_embedding_args = default_args | embedding_args
 
     def __call__(
-        self, inputs: list[str], format="df"
+        self,
+        inputs: list[str],
+        format="df",
+        **embedding_args,
     ) -> Union[pd.DataFrame, list, np.ndarray]:
         # Validate inputs
         allowed_fmts = ["df", "df_c", "df_r", "array", "list"]
         if not format in allowed_fmts:
             raise ValueError(f"Format must be one of {allowed_fmts}, not '{format}")
         embeddings = []
+        assert isinstance(inputs, Iterable) and not isinstance(inputs, str)
+        # inputs = [str(x) for x in inputs]
+        kwargs = self.default_embedding_args | embedding_args
         for inp in inputs:
-            if self.cache is not None and inp in self.cache:
-                embeddings.append(self.cache[inp])
+            cache_key = (inp, json.dumps(kwargs, sort_keys=True))
+            if self.cache is not None and cache_key in self.cache:
+                embeddings.append(self.cache[cache_key])
             else:
-                response = self.client.embeddings.create(
-                    input=[inp], model="text-embedding-ada-002"
-                )
+                response = self.client.embeddings.create(input=[inp], **kwargs)
                 x = response.data[0].embedding
                 if self.cache is not None:
-                    self.cache[inp] = x
+                    self.cache[cache_key] = x
                 embeddings.append(x)
         if format == "df" or format == "df_c":
             return pd.DataFrame(embeddings, index=inputs).T
