@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name="cachegpt",
-    version="0.1.0",
+    version="0.2.0",
     description="Simple persistant caching for OpenAI chats and embeddings",
     python_requires='>3.9.0',
     url="",
