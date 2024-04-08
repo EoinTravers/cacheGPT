@@ -52,7 +52,7 @@ class GPT:
         cache_timeout: float = float("inf"),
         **gpt_args
     ):
-        if cache_dir is None:
+        if cache_dir is not None:
             self.cache = diskcache.Cache(cache_dir, timeout=cache_timeout)
         else:
             self.cache = None
